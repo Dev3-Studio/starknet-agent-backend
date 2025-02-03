@@ -4,23 +4,23 @@ import { z } from 'zod';
  Naming convention: DTOs are named as z<EntityName><Action>, types are named as <EntityName><Action>
  Examples for User entity: DTO = zUser, type = User; DTO = zUserCreate, types = UserCreate */
 
-export type User = z.infer<typeof zUser>;
 
 export const zUserCreate = z.object({
     name: z.string(),
 });
-
 export type UserCreate = z.infer<typeof zUserCreate>;
 
 export const zEthereumAddress = z.string().refine((value) => {
     return /^0x[a-fA-F0-9]{40}$/.test(value);
 });
+export type EthereumAddress = z.infer<typeof zEthereumAddress>;
 
 export const zUser = z.object({
     name: z.string(),
     walletAddress: zEthereumAddress,
     profileImage: z.string().url(),
 });
+export type User = z.infer<typeof zUser>;
 
 export const zAgentMetadata = z.object({
     name: z.string(),
@@ -28,55 +28,44 @@ export const zAgentMetadata = z.object({
     image: z.string().url(),
     creator: zUser,
 });
+export type AgentMetadata = z.infer<typeof zAgentMetadata>;
 
-
-
-export const AgentTool = z.object({
+export const zAgentTool = z.object({
     name: z.string(),
     description: z.string(),
-    // check if unknown is right type
     argumentsSchema: z.unknown(),
-    
-    // todo encrypt data on db
-    // name : value
     environment: z.record(z.string(), z.string()),
-    // only support get and post for now
     method: z.enum(['GET', 'POST']),
     urlTemplate: z.string(),
     headersTemplate: z.record(z.string(), z.string()),
-    
-    // todo zod schema
-    // queryTemplate: z.record(z.string(), z.string()),
-    // bodyTemplate: z.record(z.string(), z.string()),
-    
     argumentsValidator: z.function(),
 });
+export type AgentTool = z.infer<typeof zAgentTool>;
 
-// current model options
 export const zModel = z.enum(['ChatGroq']);
+export type Model = z.infer<typeof zModel>;
+
 export const zAgent = z.object({
     metadata: zAgentMetadata,
-    
     model: zModel,
-    // system message data
     name: z.string(),
     biography: z.string(),
     directive: z.string(),
     rules: z.string().array(),
-    
-    // available tools
-    tools: AgentTool.array(),
+    tools: zAgentTool.array(),
 });
+export type Agent = z.infer<typeof zAgent>;
 
 export const zMessage = z.object({
     sender: zUser,
     content: z.string(),
     timestamp: z.number(),
 });
+export type Message = z.infer<typeof zMessage>;
 
 export const zChat = z.object({
-    // potential support for group chats in future
     user: z.array(zUser),
     messages: z.array(zMessage),
     agent: zAgent,
 });
+export type Chat = z.infer<typeof zChat>;
