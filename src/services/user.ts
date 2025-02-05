@@ -1,11 +1,12 @@
-import { UserCreate } from '../lib/dto';
+import { User } from '../lib/dto';
 import { db } from '../database';
-const userCollection = db.collection('users');
+import { Collection } from 'mongodb';
+const userCollection: Collection<User> = db.collection('users');
 
-export async function createUser(user: UserCreate) {
+export async function createUser(user: User) {
     // check for address conflicts
     const existingUser = await userCollection.findOne({
-        address: user.address
+        walletAddress: user.walletAddress
     });
     if (existingUser) {
         throw new Error('User already exists');
@@ -19,9 +20,9 @@ export async function getUser(address: string) {
     });
 }
 
-export async function updateUser(user: UserCreate) {
+export async function updateUser(user: User) {
     await userCollection.updateOne({
-        address: user.address
+        walletAddress: user.walletAddress
     }, {
         $set: user
     });

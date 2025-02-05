@@ -9,16 +9,10 @@ export const zEthereumAddress = z.string().refine((value) => {
 export type EthereumAddress = z.infer<typeof zEthereumAddress>;
 
 
-export const zUserCreate = z.object({
-    name: z.string(),
-    address: zEthereumAddress,
-});
-export type UserCreate = z.infer<typeof zUserCreate>;
-
-
 export const zUser = z.object({
-    name: z.string(),
+    // primary key
     walletAddress: zEthereumAddress,
+    name: z.string(),
     profileImage: z.string().url(),
 });
 export type User = z.infer<typeof zUser>;
@@ -47,6 +41,7 @@ export const zModel = z.enum(['ChatGroq']);
 export type Model = z.infer<typeof zModel>;
 
 export const zAgent = z.object({
+    id: z.string().uuid(),
     metadata: zAgentMetadata,
     model: zModel,
     name: z.string(),
@@ -60,13 +55,18 @@ export type Agent = z.infer<typeof zAgent>;
 export const zMessage = z.object({
     sender: zUser,
     content: z.string(),
-    timestamp: z.number(),
+    timestamp: z.date(),
 });
 export type Message = z.infer<typeof zMessage>;
 
 export const zChat = z.object({
+    // primary key
+    id: z.string().uuid(),
     user: z.array(zUser),
     messages: z.array(zMessage),
     agent: zAgent,
 });
 export type Chat = z.infer<typeof zChat>;
+
+export const zChatCreate = zChat.omit({ messages: true, id: true });
+export type ChatCreate = z.infer<typeof zChatCreate>;
