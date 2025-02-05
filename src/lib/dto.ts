@@ -3,17 +3,18 @@ import { z } from 'zod';
 /* Export Data Transfer Objects (DTOs) and corresponding types for the all entities in the application
  Naming convention: DTOs are named as z<EntityName><Action>, types are named as <EntityName><Action>
  Examples for User entity: DTO = zUser, type = User; DTO = zUserCreate, types = UserCreate */
-
-
-export const zUserCreate = z.object({
-    name: z.string(),
-});
-export type UserCreate = z.infer<typeof zUserCreate>;
-
 export const zEthereumAddress = z.string().refine((value) => {
     return /^0x[a-fA-F0-9]{40}$/.test(value);
 });
 export type EthereumAddress = z.infer<typeof zEthereumAddress>;
+
+
+export const zUserCreate = z.object({
+    name: z.string(),
+    address: zEthereumAddress,
+});
+export type UserCreate = z.infer<typeof zUserCreate>;
+
 
 export const zUser = z.object({
     name: z.string(),

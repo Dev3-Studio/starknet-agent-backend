@@ -19,6 +19,9 @@ app.use(express.json());
 
 // Register routes
 app.use('/ping', pingRoutes);
+app.use('/user', userRoutes);
+app.use('/agent', agentRoutes);
+app.use('/chat', chatRoutes);
 
 // Error handling
 app.use(exceptionHandler);
