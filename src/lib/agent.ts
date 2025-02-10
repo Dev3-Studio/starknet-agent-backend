@@ -4,8 +4,8 @@ import { AIMessage, AIMessageChunk, HumanMessage, SystemMessage, ToolMessage } f
 import { Runnable } from '@langchain/core/runnables';
 import { BaseLanguageModelInput } from '@langchain/core/dist/language_models/base';
 
-interface ITemplate {
-    [key: string]: string | string[] | ITemplate;
+export interface JsonTemplate {
+    [key: string]: string | string[] | JsonTemplate;
 }
 
 type Primitive = string | number | boolean | null;
@@ -36,7 +36,7 @@ function fillTemplateString(template: string, data: Record<string, Primitive | P
     return template;
 }
 
-function fillTemplate(template: ITemplate, data: Record<string, Primitive | Primitive[]>) {
+function fillTemplate(template: JsonTemplate, data: Record<string, Primitive | Primitive[]>) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const filled: Record<string, any> = {};
     for (const [key, value] of Object.entries(template)) {
@@ -113,11 +113,11 @@ interface AgentToolConfig {
     method: 'GET' | 'POST',
     urlTemplate: string,
     headersTemplate: Record<string, string>,
-    queryTemplate: ITemplate,
-    bodyTemplate: ITemplate,
+    queryTemplate: JsonTemplate,
+    bodyTemplate: JsonTemplate,
 }
 
-class AgentTool {
+export class AgentTool {
     readonly name: string;
     readonly description: string;
     readonly argumentsSchema: object;
@@ -127,8 +127,8 @@ class AgentTool {
     private readonly _method: 'GET' | 'POST';
     private readonly _urlTemplate: string;
     private readonly _headersTemplate: Record<string, string>;
-    private readonly _queryTemplate: ITemplate;
-    private readonly _bodyTemplate: ITemplate;
+    private readonly _queryTemplate: JsonTemplate;
+    private readonly _bodyTemplate: JsonTemplate;
     
     private readonly _argumentsValidator: ValidateFunction;
     

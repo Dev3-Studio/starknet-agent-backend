@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { JsonTemplate } from './agent';
 
 /* Export Data Transfer Objects (DTOs) and corresponding types for the all entities in the application
  Naming convention: DTOs are named as z<EntityName><Action>, types are named as <EntityName><Action>
@@ -25,15 +26,27 @@ export const zAgentMetadata = z.object({
 });
 export type AgentMetadata = z.infer<typeof zAgentMetadata>;
 
+const zLiteral = z.union([z.string(), z.number(), z.boolean(), z.null()]);
+type Literal = z.infer<typeof zLiteral>;
+type Json = Literal | { [key: string]: Json } | Json[];
+const zJson: z.ZodType<Json> = z.lazy(() =>
+    z.union([zLiteral, z.array(zJson), z.record(zJson)])
+);
+const zJsonTemplate: z.ZodType<JsonTemplate> = z.record(
+    z.string(),
+    z.string().or(z.string().array()).or(z.lazy(() => zJsonTemplate)),
+);
+
 export const zAgentTool = z.object({
     name: z.string(),
     description: z.string(),
-    argumentsSchema: z.unknown(),
+    argumentsSchema: zJson,
     environment: z.record(z.string(), z.string()),
     method: z.enum(['GET', 'POST']),
     urlTemplate: z.string(),
     headersTemplate: z.record(z.string(), z.string()),
-    argumentsValidator: z.function(),
+    queryTemplate: zJsonTemplate,
+    bodyTemplate: zJsonTemplate,
 });
 export type AgentTool = z.infer<typeof zAgentTool>;
 
