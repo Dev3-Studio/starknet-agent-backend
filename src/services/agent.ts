@@ -47,8 +47,8 @@ export async function getAgent(agentId: string, callerWalletAddress?: string): P
     };
 }
 
-export async function createAgent(agent: AgentCreate): Promise<Agent> {
-    const res = await AgentCollection.insertOne({
+function formatAgentForInsert(agent: AgentCreate) {
+    return {
         ...agent,
         tools: agent.tools.map(t => {
             return {
@@ -60,9 +60,11 @@ export async function createAgent(agent: AgentCreate): Promise<Agent> {
                 queryTemplate: JSON.stringify(t.queryTemplate),
             };
         }),
-        totalChats: 0,
-        totalMessages: 0,
-    });
+    };
+}
+
+export async function createAgent(agent: AgentCreate): Promise<Agent> {
+    const res = await AgentCollection.insertOne({ ...formatAgentForInsert(agent), totalChats: 0, totalMessages: 0 });
     return await getAgent(res.insertedId.toString());
 }
 
@@ -72,23 +74,7 @@ export async function updateAgent(agentId: string, agent: AgentCreate, callerWal
         throw new ForbiddenError('You are not the creator of this agent');
     }
     
-    await AgentCollection.updateOne({ id: agentId }, {
-        $set: {
-            ...agent,
-            tools: agent.tools.map(t => {
-                return {
-                    ...t,
-                    argumentsSchema: JSON.stringify(t.argumentsSchema),
-                    environment: encryptAes256gcm(JSON.stringify(t.environment), env('AES_KEY')),
-                    bodyTemplate: JSON.stringify(t.bodyTemplate),
-                    headersTemplate: JSON.stringify(t.headersTemplate),
-                    queryTemplate: JSON.stringify(t.queryTemplate),
-                };
-            }),
-        },
-    });
+    await AgentCollection.updateOne({ id: agentId }, { $set: formatAgentForInsert(agent) });
     return await getAgent(agentId);
 }
-
-
 
