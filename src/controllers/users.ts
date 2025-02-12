@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import * as services from '../services/user';
+import * as services from '../services/users';
 import { zUserCreate } from '../lib/dto';
 
 export async function createUser(req: Request, res: Response) {
