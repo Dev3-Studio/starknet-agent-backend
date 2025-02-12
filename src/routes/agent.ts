@@ -1,14 +1,29 @@
 import { Router } from 'express';
 import * as controller from '../controllers/agent';
-import { parseBodyMiddleware } from '../middleware/parse';
-import { zAgent } from '../lib/dto';
+import { parseBodyMiddleware, parseQueryMiddleware } from '../middleware/parse';
+import { zAgentCreate } from '../lib/dto';
+import { z } from 'zod';
+import { populateUser, withAuth } from '../middleware/auth';
 
 const router = Router();
-// todo add routes
+
+router.get('/:id',
+    populateUser(),
+    parseQueryMiddleware(z.string().uuid()),
+    controller.getAgent
+)
 
 router.post('/',
-    parseBodyMiddleware(zAgent),
+    withAuth(),
+    parseBodyMiddleware(zAgentCreate),
     controller.createAgent
+);
+
+router.patch('/:id',
+    withAuth(),
+    parseQueryMiddleware(z.string().uuid()),
+    parseBodyMiddleware(zAgentCreate),
+    controller.updateAgent
 );
 
 export default router;
