@@ -9,28 +9,23 @@ export const zEthereumAddress = z.string().refine((value) => {
 });
 export type EthereumAddress = z.infer<typeof zEthereumAddress>;
 
-
 export const zUser = z.object({
-    // primary key
+    id: z.string().uuid(),
     walletAddress: zEthereumAddress,
-    name: z.string(),
-    profileImage: z.string().url(),
+    name: z.string().optional(),
+    profileImage: z.string().url().optional(),
+    credits: z.number().int().min(0),
 });
 export type User = z.infer<typeof zUser>;
 
-export const zAgentMetadata = z.object({
-    name: z.string(),
-    description: z.string(),
-    image: z.string().url(),
-    creator: zUser,
-});
-export type AgentMetadata = z.infer<typeof zAgentMetadata>;
+export const zUserCreate = zUser.omit({ id: true, credits: true });
+export type UserCreate = z.infer<typeof zUserCreate>;
 
 const zLiteral = z.union([z.string(), z.number(), z.boolean(), z.null()]);
 type Literal = z.infer<typeof zLiteral>;
 type Json = Literal | { [key: string]: Json } | Json[];
 const zJson: z.ZodType<Json> = z.lazy(() =>
-    z.union([zLiteral, z.array(zJson), z.record(zJson)])
+    z.union([zLiteral, z.array(zJson), z.record(zJson)]),
 );
 const zJsonTemplate: z.ZodType<JsonTemplate> = z.record(
     z.string(),
@@ -50,36 +45,57 @@ export const zAgentTool = z.object({
 });
 export type AgentTool = z.infer<typeof zAgentTool>;
 
-export const zModel = z.enum(['ChatGroq']);
-export type Model = z.infer<typeof zModel>;
-
 export const zAgent = z.object({
     id: z.string().uuid(),
-    metadata: zAgentMetadata,
-    model: zModel,
     name: z.string(),
+    description: z.string(),
+    creator: zUser,
+    pricePerTokenUsd: z.number().int().min(0),
+    royaltyPerTokenUsd: z.number().int().min(0),
+    tags: z.string().array(),
+    image: z.string().url(),
     biography: z.string(),
     directive: z.string(),
     rules: z.string().array(),
     tools: zAgentTool.array(),
+    totalChats: z.number().int().min(0),
+    totalMessages: z.number().int().min(0),
 });
 export type Agent = z.infer<typeof zAgent>;
 
+export const zAgentCreate = zAgent.omit({ id: true, creator: true, }).merge(z.object({ creator: z.string().uuid() }));
+export type AgentCreate = z.infer<typeof zAgentCreate>;
+
 export const zMessage = z.object({
-    sender: zUser,
-    content: z.string(),
-    timestamp: z.date(),
+    type: z.string(),
+    data: z.object({
+        id: z.string().optional(),
+        content: z.string(),
+        role: z.string().optional(),
+        name: z.string().optional(),
+        tool_call_id: z.string().optional(),
+        additional_kwargs: z.record(z.string(), z.any()).optional(),
+        response_metadata: z.record(z.string(), z.any()).optional(),
+    }),
 });
 export type Message = z.infer<typeof zMessage>;
 
 export const zChat = z.object({
-    // primary key
     id: z.string().uuid(),
-    user: z.array(zUser),
-    messages: z.array(zMessage),
+    user: zUser,
     agent: zAgent,
+    title: z.string().optional(),
+    messages: z.array(zMessage),
 });
 export type Chat = z.infer<typeof zChat>;
 
-export const zChatCreate = zChat.omit({ messages: true, id: true });
+export const zChatCreate = zChat
+    .pick({
+        title: true,
+        messages: true,
+    })
+    .merge(z.object({
+        user: z.string().uuid(),
+        agent: z.string().uuid(),
+    }));
 export type ChatCreate = z.infer<typeof zChatCreate>;
