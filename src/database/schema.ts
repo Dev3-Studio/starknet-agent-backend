@@ -2,17 +2,18 @@ import { db } from './index';
 import { Message } from '../lib/dto';
 
 interface User {
-    wallet_address: string;
+    walletAddress: string;
     name?: string;
-    profile_image?: string;
+    profileImage?: string;
     credits: number;
 }
 export const UserCollection = db.collection<User>('users');
 
 interface Agent {
     name: string;
-    description: string;
     creator: string;
+    pricePerTokenUsd: number;
+    royaltyPerTokenUsd: number;
     tags: string[];
     image: string;
     biography: string;
@@ -21,14 +22,16 @@ interface Agent {
     tools: Array<{
         name: string;
         description: string;
-        arguments_schema: string;
+        argumentsSchema: string;
         environment: string;
         method: 'GET' | 'POST';
-        url_template: string;
-        headers_template: string;
-        query_template: string;
-        body_template: string;
+        urlTemplate: string;
+        headersTemplate: string;
+        queryTemplate: string;
+        bodyTemplate: string;
     }>
+    totalChats: number;
+    totalMessages: number;
 }
 export const AgentCollection = db.collection<Agent>('agents');
 
@@ -39,3 +42,10 @@ interface Chat {
     messages: Message[];
 }
 export const ChatCollection = db.collection<Chat>('chats');
+
+interface PendingBlockchainCharges {
+    user: string;
+    agent: string;
+    amount: number;
+}
+export const PendingBlockchainChargesCollection = db.collection<PendingBlockchainCharges>('pending_blockchain_charges');

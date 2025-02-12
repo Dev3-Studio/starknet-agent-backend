@@ -48,22 +48,33 @@ export type AgentTool = z.infer<typeof zAgentTool>;
 export const zAgent = z.object({
     id: z.string().uuid(),
     name: z.string(),
-    description: z.string(),
     creator: zUser,
     pricePerTokenUsd: z.number().int().min(0),
     royaltyPerTokenUsd: z.number().int().min(0),
     tags: z.string().array(),
     image: z.string().url(),
-    biography: z.string(),
-    directive: z.string(),
-    rules: z.string().array(),
-    tools: zAgentTool.array(),
+    biography: z.string().optional(),
+    directive: z.string().optional(),
+    rules: z.string().array().optional(),
+    tools: zAgentTool.array().optional(),
     totalChats: z.number().int().min(0),
     totalMessages: z.number().int().min(0),
 });
 export type Agent = z.infer<typeof zAgent>;
 
-export const zAgentCreate = zAgent.omit({ id: true, creator: true, }).merge(z.object({ creator: z.string().uuid() }));
+export const zAgentCreate = zAgent
+    .omit({
+        id: true,
+        totalChats: true,
+        totalMessages: true,
+    })
+    .merge(z.object({
+        creator: z.string().uuid(),
+        biography: z.string(),
+        directive: z.string(),
+        rules: z.string().array(),
+        tools: zAgentTool.array(),
+    }));
 export type AgentCreate = z.infer<typeof zAgentCreate>;
 
 export const zMessage = z.object({
@@ -73,9 +84,9 @@ export const zMessage = z.object({
         content: z.string(),
         role: z.string().optional(),
         name: z.string().optional(),
-        tool_call_id: z.string().optional(),
-        additional_kwargs: z.record(z.string(), z.any()).optional(),
-        response_metadata: z.record(z.string(), z.any()).optional(),
+        toolCallId: z.string().optional(),
+        additionalKwargs: z.record(z.string(), z.any()).optional(),
+        responseMetadata: z.record(z.string(), z.any()).optional(),
     }),
 });
 export type Message = z.infer<typeof zMessage>;
