@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
 import { fromError } from 'zod-validation-error';
 
-export function parseBodyMiddleware(schema: z.ZodSchema<never>) {
+export function parseBodyMiddleware(schema: z.ZodSchema<any>) {
     return (req: Request, res: Response, next: NextFunction) => {
         try {
             req.body = schema.parse(req.body);
@@ -16,7 +16,7 @@ export function parseBodyMiddleware(schema: z.ZodSchema<never>) {
     };
 }
 
-export function parseQueryMiddleware(schema: z.ZodSchema<never>) {
+export function parseQueryMiddleware(schema: z.ZodSchema<any>) {
     return (req: Request, res: Response, next: NextFunction) => {
         try {
             req.query = schema.parse(req.query);
@@ -30,7 +30,7 @@ export function parseQueryMiddleware(schema: z.ZodSchema<never>) {
     };
 }
 
-export function parseParamsMiddleware(schema: z.ZodSchema<never>) {
+export function parseParamsMiddleware(schema: z.ZodSchema<any>) {
     return (req: Request, res: Response, next: NextFunction) => {
         try {
             req.params = schema.parse(req.params);
