@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import * as controller from '../controllers/agent';
+import * as controller from '../controllers/agents';
 import { parseBodyMiddleware, parseQueryMiddleware } from '../middleware/parse';
 import { zAgentCreate } from '../lib/dto';
 import { z } from 'zod';

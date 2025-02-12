@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import * as services from '../services/agent';
+import * as services from '../services/agents';
 import { zAgentCreate } from '../lib/dto';
 
 export async function getAgent(req: Request, res: Response) {
