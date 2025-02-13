@@ -3,10 +3,7 @@ import Ajv, { ValidateFunction } from 'ajv';
 import { AIMessage, AIMessageChunk, HumanMessage, SystemMessage, ToolMessage } from '@langchain/core/messages';
 import { Runnable } from '@langchain/core/runnables';
 import { BaseLanguageModelInput } from '@langchain/core/dist/language_models/base';
-
-export interface JsonTemplate {
-    [key: string]: string | string[] | JsonTemplate;
-}
+import { JsonTemplate } from './dto';
 
 type Primitive = string | number | boolean | null;
 
@@ -97,7 +94,7 @@ interface NullArgument {
 
 type SchemaArgument = StringArgument | NumericArgument | ArrayArgument | BooleanArgument | NullArgument;
 
-interface ArgumentsSchema {
+export interface ArgumentsSchema {
     type: 'object',
     properties: Record<string, SchemaArgument>,
     required?: [string, ...string[]],
