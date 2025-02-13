@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import { UnauthorizedError } from '../lib/httpErrors';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { env } from '../lib/env';
+import { UserCollection } from '../database/schema';
 
 export function withAuth() {
     return async (req: Request, res: Response, next: NextFunction) => {
@@ -14,9 +15,12 @@ export function withAuth() {
         try {
             const decodedToken = jwt.verify(token, env('JWT_SECRET'));
             const address = (decodedToken as JwtPayload).address as string;
-            req.user = { address };
-        }
-        catch {
+            const user = await UserCollection.findOne({ address });
+            req.user = {
+                id: user?._id.toString() ?? undefined,
+                address,
+            };
+        } catch {
             throw new UnauthorizedError('Invalid token');
         }
         next();
@@ -24,7 +28,7 @@ export function withAuth() {
 }
 
 export function populateUser() {
-    return (req: Request, res: Response, next: NextFunction) => {
+    return async (req: Request, res: Response, next: NextFunction) => {
         // Get user from jwt
         const authHeader = req.headers['authorization'];
         if (!authHeader) return next();
@@ -33,9 +37,12 @@ export function populateUser() {
         try {
             const decodedToken = jwt.verify(token, env('JWT_SECRET'));
             const address = (decodedToken as JwtPayload).address as string;
-            req.user = { address };
-        }
-        catch {
+            const user = await UserCollection.findOne({ address });
+            req.user = {
+                id: user?._id.toString() ?? undefined,
+                address,
+            };
+        } catch {
             // Do nothing
         }
         next();
