@@ -20,9 +20,11 @@ export type User = z.infer<typeof zUser>;
 export const zUserCreate = zUser.omit({ id: true, credits: true });
 export type UserCreate = z.infer<typeof zUserCreate>;
 
-export type Json = { [key: string]: Json } | Json[];
+const zLiteral = z.union([z.string(), z.number(), z.boolean(), z.null()]);
+export type Literal = z.infer<typeof zLiteral>;
+export type Json = Literal | { [key: string]: Json } | Json[];
 const zJson: z.ZodType<Json> = z.lazy(() =>
-    z.union([z.array(zJson), z.record(zJson)]),
+    z.union([zLiteral, z.array(zJson), z.record(zJson)]),
 );
 export interface JsonTemplate {
     [key: string]: string | string[] | JsonTemplate;
