@@ -2,6 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import { env } from '../lib/env';
 import pingRoutes from '../routes/ping';
+import userRoutes from '../routes/users';
+import agentRoutes from '../routes/agents';
+import chatRoutes from '../routes/chats';
 import { exceptionHandler } from '../middleware/exception';
 
 const app = express();
