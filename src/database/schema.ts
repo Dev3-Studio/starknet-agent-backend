@@ -12,6 +12,8 @@ export const UserCollection = db.collection<IUserCollection>('users');
 export interface IAgentCollection {
     name: string;
     creator: string;
+    description: string;
+    tagline: string;
     pricePerTokenUsd: number;
     royaltyPerTokenUsd: number;
     tags: string[];
@@ -43,9 +45,9 @@ export interface IChatCollection {
 }
 export const ChatCollection = db.collection<IChatCollection>('chats');
 
-export interface IPendingBlockchainChargesCollection {
+export interface IPendingRoyalties {
     user: string;
-    agent: string;
+    creator: string;
     amount: number;
 }
-export const PendingBlockchainChargesCollection = db.collection<IPendingBlockchainChargesCollection>('pending_blockchain_charges');
+export const PendingRoyaltiesCollection = db.collection<IPendingRoyalties>('royalties');
