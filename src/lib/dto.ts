@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { JsonTemplate } from './agent';
 
 /* Export Data Transfer Objects (DTOs) and corresponding types for the all entities in the application
  Naming convention: DTOs are named as z<EntityName><Action>, types are named as <EntityName><Action>
@@ -21,12 +20,13 @@ export type User = z.infer<typeof zUser>;
 export const zUserCreate = zUser.omit({ id: true, credits: true });
 export type UserCreate = z.infer<typeof zUserCreate>;
 
-const zLiteral = z.union([z.string(), z.number(), z.boolean(), z.null()]);
-type Literal = z.infer<typeof zLiteral>;
-export type Json = Literal | { [key: string]: Json } | Json[];
+export type Json = { [key: string]: Json } | Json[];
 const zJson: z.ZodType<Json> = z.lazy(() =>
-    z.union([zLiteral, z.array(zJson), z.record(zJson)]),
+    z.union([z.array(zJson), z.record(zJson)]),
 );
+export interface JsonTemplate {
+    [key: string]: string | string[] | JsonTemplate;
+}
 const zJsonTemplate: z.ZodType<JsonTemplate> = z.record(
     z.string(),
     z.string().or(z.string().array()).or(z.lazy(() => zJsonTemplate)),
@@ -48,28 +48,39 @@ export type AgentTool = z.infer<typeof zAgentTool>;
 export const zAgent = z.object({
     id: z.string().uuid(),
     name: z.string(),
+    description: z.string(),
+    tagline: z.string().max(32),
     creator: zUser,
     pricePerTokenUsd: z.number().int().min(0),
     royaltyPerTokenUsd: z.number().int().min(0),
     tags: z.string().array(),
     image: z.string().url(),
-    biography: z.string().optional(),
-    directive: z.string().optional(),
-    rules: z.string().array().optional(),
-    tools: zAgentTool.array().optional(),
+    biography: z.string(),
+    directive: z.string(),
+    rules: z.string().array(),
+    tools: zAgentTool.array(),
     totalChats: z.number().int().min(0),
     totalMessages: z.number().int().min(0),
 });
 export type Agent = z.infer<typeof zAgent>;
 
+export const zAgentPublic = zAgent.omit({
+    biography: true,
+    directive: true,
+    rules: true,
+    tools: true,
+});
+export type AgentPublic = z.infer<typeof zAgentPublic>;
+
 export const zAgentCreate = zAgent
     .omit({
         id: true,
+        pricePerTokenUsd: true,
         totalChats: true,
         totalMessages: true,
+        creator: true,
     })
     .merge(z.object({
-        creator: z.string().uuid(),
         biography: z.string(),
         directive: z.string(),
         rules: z.string().array(),
@@ -94,19 +105,17 @@ export type Message = z.infer<typeof zMessage>;
 export const zChat = z.object({
     id: z.string().uuid(),
     user: zUser,
-    agent: zAgent,
+    agent: zAgentPublic,
     title: z.string().optional(),
-    messages: z.array(zMessage),
+    messages: z.array(zMessage).optional(),
 });
 export type Chat = z.infer<typeof zChat>;
 
 export const zChatCreate = zChat
     .pick({
         title: true,
-        messages: true,
     })
     .merge(z.object({
-        user: z.string().uuid(),
         agent: z.string().uuid(),
     }));
 export type ChatCreate = z.infer<typeof zChatCreate>;

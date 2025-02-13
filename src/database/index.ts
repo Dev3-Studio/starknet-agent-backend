@@ -3,7 +3,7 @@ import { env } from '../lib/env';
 
 // Connection URL
 const url = env('DB_URI');
-const client = new MongoClient(url);
+export const client = new MongoClient(url);
 
 export let db: Db;
 
