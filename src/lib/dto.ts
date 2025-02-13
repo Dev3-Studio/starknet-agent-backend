@@ -23,7 +23,7 @@ export type UserCreate = z.infer<typeof zUserCreate>;
 
 const zLiteral = z.union([z.string(), z.number(), z.boolean(), z.null()]);
 type Literal = z.infer<typeof zLiteral>;
-type Json = Literal | { [key: string]: Json } | Json[];
+export type Json = Literal | { [key: string]: Json } | Json[];
 const zJson: z.ZodType<Json> = z.lazy(() =>
     z.union([zLiteral, z.array(zJson), z.record(zJson)]),
 );

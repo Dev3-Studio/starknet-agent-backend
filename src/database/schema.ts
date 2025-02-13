@@ -1,15 +1,15 @@
 import { db } from './index';
 import { Message } from '../lib/dto';
 
-interface User {
+export interface IUserCollection {
     walletAddress: string;
     name?: string;
     profileImage?: string;
     credits: number;
 }
-export const UserCollection = db.collection<User>('users');
+export const UserCollection = db.collection<IUserCollection>('users');
 
-interface Agent {
+export interface IAgentCollection {
     name: string;
     creator: string;
     pricePerTokenUsd: number;
@@ -33,19 +33,19 @@ interface Agent {
     totalChats: number;
     totalMessages: number;
 }
-export const AgentCollection = db.collection<Agent>('agents');
+export const AgentCollection = db.collection<IAgentCollection>('agents');
 
-interface Chat {
+export interface IChatCollection {
     user: string;
     agent: string;
     title?: string;
     messages: Message[];
 }
-export const ChatCollection = db.collection<Chat>('chats');
+export const ChatCollection = db.collection<IChatCollection>('chats');
 
-interface PendingBlockchainCharges {
+export interface IPendingBlockchainChargesCollection {
     user: string;
     agent: string;
     amount: number;
 }
-export const PendingBlockchainChargesCollection = db.collection<PendingBlockchainCharges>('pending_blockchain_charges');
+export const PendingBlockchainChargesCollection = db.collection<IPendingBlockchainChargesCollection>('pending_blockchain_charges');
