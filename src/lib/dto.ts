@@ -102,11 +102,11 @@ export type AgentCreate = z.infer<typeof zAgentCreate>;
 export const zMessage = z.object({
     type: z.string(),
     data: z.object({
-        id: z.string().optional(),
+        id: z.string().nullable(),
         content: z.string(),
-        role: z.string().optional(),
-        name: z.string().optional(),
-        toolCallId: z.string().optional(),
+        role: z.string().nullable(),
+        name: z.string().nullable(),
+        toolCallId: z.string().nullable(),
         additionalKwargs: z.record(z.string(), z.any()).optional(),
         responseMetadata: z.record(z.string(), z.any()).optional(),
     }),

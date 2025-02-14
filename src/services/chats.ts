@@ -1,6 +1,6 @@
 import { Chat, ChatCreate, Message, zAgentPublic, zChat, zMessage } from '../lib/dto';
 import { ChatCollection, IChatCollection, IPendingRoyalties, IUserCollection } from '../database/schema';
-import { NotFoundError, UnprocessableEntityError } from '../lib/httpErrors';
+import { ForbiddenError, NotFoundError, UnprocessableEntityError } from '../lib/httpErrors';
 import { getAgent } from './agents';
 import { getUserById } from './users';
 import { AIMessage, HumanMessage, StoredMessage, ToolMessage } from '@langchain/core/messages';
@@ -19,7 +19,7 @@ export async function getChat(chatId: string): Promise<Chat & { messages: Messag
     const user = await getUserById(res.user);
     const agent = await getAgent(res.agent, false);
     
-    return zChat.merge(z.object({ messages: zMessage.array() })).parse({
+    return zChat.extend({ messages: zMessage.array() }).parse({
         ...res,
         id: res._id.toString(),
         user,
@@ -86,12 +86,12 @@ function convertMessageDictToMessage(messageDict: StoredMessage): Message {
     return {
         type,
         data: {
-            id,
+            id: id ?? null,
             content,
-            name,
+            name: name ?? null,
             additionalKwargs,
-            toolCallId,
-            role,
+            toolCallId: toolCallId ?? null,
+            role: role ?? null,
             responseMetadata,
         },
     };
@@ -100,11 +100,24 @@ function convertMessageDictToMessage(messageDict: StoredMessage): Message {
 function convertMessageToLangchainMessage(message: Message): HumanMessage | AIMessage | ToolMessage {
     const { type, data } = message;
     if (type === 'human') {
-        return new HumanMessage(data);
+        return new HumanMessage({
+            ...data,
+            id: data.id ?? undefined,
+            name: data.name ?? undefined,
+        });
     } else if (type === 'ai') {
-        return new AIMessage(data);
+        return new AIMessage({
+            ...data,
+            id: data.id ?? undefined,
+            name: data.name ?? undefined,
+        });
     } else if (type === 'tool') {
-        return new ToolMessage({ ...data, tool_call_id: data.toolCallId ?? '0' });
+        return new ToolMessage({
+            ...data,
+            id: data.id ?? undefined,
+            name: data.name ?? undefined,
+            tool_call_id: data.toolCallId ?? '0'
+        });
     } else {
         throw new Error('Unknown message type');
     }
@@ -141,6 +154,9 @@ export async function addUserMessage(chatId: string, message: string): Promise<C
     
     const response = await agent.invoke(chat.messages.map(convertMessageToLangchainMessage));
     const creditsUsed = response.usage_metadata?.total_tokens ?? 0;
+    if (creditsUsed > chat.user.credits) {
+        throw new ForbiddenError('Insufficient credits');
+    }
     chat.messages.push(convertMessageDictToMessage(response.toDict()));
     
     // Start transaction
@@ -174,11 +190,10 @@ export async function addUserMessage(chatId: string, message: string): Promise<C
                 { session },
             );
             
-            return chatUpdate.upsertedId?.toString();
+            if (chatUpdate.matchedCount > 0) return chat.id;
+            throw new NotFoundError('Chat not found');
         }),
     );
-    
-    if (!updatedChatId) throw new NotFoundError('Chat not found');
     
     return await getChat(updatedChatId);
 }
