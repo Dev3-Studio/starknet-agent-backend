@@ -1,6 +1,6 @@
 {
-  "name": "express-drizzle-boilerplate",
-  "version": "0.1.0",
+  "name": "starknet-agent-backend",
+  "version": "1.0.0",
   "main": "index.ts",
   "scripts": {
     "dev": "nodemon src/index.ts",
