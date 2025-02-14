@@ -8,13 +8,13 @@ async function getUserFromToken(authHeader: string) {
     const token = authHeader.split(' ')[1];
     const decodedToken = jwt.verify(token, env('JWT_SECRET'));
     const address = (decodedToken as JwtPayload).address as string;
-    const userRes = await UserCollection.findOne({ address });
+    const userRes = await UserCollection.findOne({ walletAddress: address });
     return { id: userRes?._id.toString() ?? undefined, address };
 }
 
 export function withAuth() {
     return async (req: Request, res: Response, next: NextFunction) => {
-        const authHeader = req.headers['Authorization'];
+        const authHeader = req.headers['authorization'];
         if (!authHeader) {
             next(new UnauthorizedError('No Authorization header provided'));
             return;
@@ -36,7 +36,7 @@ export function withAuth() {
 
 export function populateUser() {
     return async (req: Request, res: Response, next: NextFunction) => {
-        const authHeader = req.headers['Authorization'];
+        const authHeader = req.headers['authorization'];
         if (!authHeader) {
             next();
         }

@@ -9,9 +9,10 @@ import { z } from 'zod';
 import { ChatGroq } from '@langchain/groq';
 import { env } from '../lib/env';
 import { client } from '../database';
+import { ObjectId } from 'mongodb';
 
 export async function getChat(chatId: string): Promise<Chat & { messages: Message[] }> {
-    const res = await ChatCollection.findOne({ id: chatId });
+    const res = await ChatCollection.findOne({ _id: new ObjectId(chatId) });
     if (!res) throw new NotFoundError('Chat not found');
     
     const user = await getUserById(res.user);
@@ -140,7 +141,7 @@ export async function addUserMessage(chatId: string, message: string): Promise<C
             
             // Deduct credits from user
             await txUserCollection.updateOne(
-                { id: chat.user.id },
+                { _id: new ObjectId(chat.user.id) },
                 { $inc: { credits: -creditsUsed } },
                 { session }
             );
@@ -157,7 +158,7 @@ export async function addUserMessage(chatId: string, message: string): Promise<C
             
             // Update chat
             const chatUpdate = await txChatCollection.updateOne(
-                { id: chat.id },
+                { _id: new ObjectId(chat.id) },
                 { $set: { messages: chat.messages } },
                 { session }
             );
@@ -172,5 +173,5 @@ export async function addUserMessage(chatId: string, message: string): Promise<C
 }
 
 export async function deleteChat(chatId: string) {
-    await ChatCollection.deleteOne({ id: chatId });
+    await ChatCollection.deleteOne({ _id: new ObjectId(chatId) });
 }

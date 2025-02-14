@@ -1,6 +1,7 @@
 import { User, UserCreate, zUser } from '../lib/dto';
 import { UserCollection } from '../database/schema';
 import { ConflictError, NotFoundError } from '../lib/httpErrors';
+import { ObjectId } from 'mongodb';
 
 export async function getUser(address: string): Promise<User> {
     const res = await UserCollection.findOne({ walletAddress: address });
@@ -12,7 +13,7 @@ export async function getUser(address: string): Promise<User> {
 }
 
 export async function getUserById(id: string): Promise<User> {
-    const res = await UserCollection.findOne({ id });
+    const res = await UserCollection.findOne({ _id: new ObjectId(id) });
     if (!res) throw new NotFoundError('User not found');
     return zUser.parse({
         ...res,

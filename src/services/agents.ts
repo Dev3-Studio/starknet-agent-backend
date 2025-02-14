@@ -4,17 +4,17 @@ import { decryptAes256gcm, encryptAes256gcm } from '../lib/aes256gcm';
 import { env } from '../lib/env';
 import { InternalServerError, NotFoundError } from '../lib/httpErrors';
 import Ajv from 'ajv';
-import { WithId } from 'mongodb';
+import { ObjectId, WithId } from 'mongodb';
 import { getUser } from './users';
 
 export async function getAgent(agentId: string, includePrivateFields: false): Promise<AgentPublic>;
 export async function getAgent(agentId: string, includePrivateFields: true): Promise<Agent>;
 export async function getAgent(agentId: string, includePrivateFields?: boolean): Promise<AgentPublic | Agent>
 export async function getAgent(agentId: string, includePrivateFields?: boolean): Promise<AgentPublic | Agent> {
-    const agentResult = await AgentCollection.findOne({ id: agentId });
+    const agentResult = await AgentCollection.findOne({ _id: new ObjectId(agentId) });
     if (!agentResult) throw new NotFoundError('Agent not found');
     
-    const creatorResult = await UserCollection.findOne({ id: agentResult.creator });
+    const creatorResult = await UserCollection.findOne({ _id: new ObjectId(agentResult.creator) });
     if (!creatorResult) throw new NotFoundError('Creator not found');
     
     // If caller is not the creator, hide private fields
@@ -45,7 +45,7 @@ export async function getAgents(props: GetAgentsProps): Promise<AgentPublic[]> {
     if (sort == 'date') sortQuery['_id'] = order === 'asc' ? 1 : -1;
     else if (sort) sortQuery[sort] = order === 'asc' ? 1 : -1;
     const agents = await AgentCollection.find(query).sort(sortQuery).limit(limit ?? 100).toArray();
-    const creators = await UserCollection.find({ id: { $in: agents.map(a => a.creator) } }).toArray();
+    const creators = await UserCollection.find({ _id: { $in: agents.map(a => new ObjectId(a.creator)) } }).toArray();
     return agents.map(agent => {
         const creator = creators.find(c => c._id.toString() === agent.creator);
         if (!creator) throw new InternalServerError('Creator not found');
@@ -54,7 +54,7 @@ export async function getAgents(props: GetAgentsProps): Promise<AgentPublic[]> {
 }
 
 export async function getAgentCreator(agentId: string): Promise<User> {
-    const agentResult = await AgentCollection.findOne({ id: agentId });
+    const agentResult = await AgentCollection.findOne({ _id: new ObjectId(agentId) });
     if (!agentResult) throw new NotFoundError('Agent not found');
     
     return await getUser(agentResult.creator);
@@ -71,7 +71,7 @@ export async function createAgent(agent: AgentCreate & { creator: string }): Pro
 }
 
 export async function updateAgent(agentId: string, agent: AgentCreate  & { creator: string }): Promise<Agent> {
-    await AgentCollection.updateOne({ id: agentId }, { $set: formatAgentForInsert(agent) });
+    await AgentCollection.updateOne({ _id: new ObjectId(agentId) }, { $set: formatAgentForInsert(agent) });
     return await getAgent(agentId, true);
 }
 
