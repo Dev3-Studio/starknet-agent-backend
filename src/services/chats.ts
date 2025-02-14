@@ -34,30 +34,57 @@ interface GetChatsOptions {
 }
 
 export async function getChats(userId: string, options: GetChatsOptions): Promise<Chat[]> {
-    const { order } = options;
-    const sortQuery: Record<string, 1 | -1> = {};
-    sortQuery['_id'] = order === 'asc' ? 1 : -1;
-    const chats = await ChatCollection.find({ user: userId }).sort(sortQuery).toArray();
+    const { order = 'desc', agentId, includeMessages = false } = options;
+    
+    // Build query conditions
+    const query: Record<string, string> = { user: userId };
+    if (agentId) {
+        query.agent = agentId;
+    }
+    
+    // Build sort query
+    const sortQuery: Record<string, 1 | -1> = {
+        _id: order === 'asc' ? 1 : -1
+    };
+    
+    // Fetch base chat data
+    const chats = await ChatCollection.find(query)
+        .sort(sortQuery)
+        .toArray();
+    
+    if (!chats.length) {
+        return [];
+    }
+    
+    // Fetch user data once for all chats
     const user = await getUserById(userId);
-    const agentCache: z.infer<typeof zAgentPublic>[] = [];
+    
+    // Create agent cache for deduplication
+    const agentCache = new Map<string, z.infer<typeof zAgentPublic>>();
+    
     const fetchAgent = async (agentId: string) => {
-        const cachedAgent = agentCache.find(a => a.id === agentId);
-        if (cachedAgent) return cachedAgent;
+        if (agentCache.has(agentId)) {
+            return agentCache.get(agentId)!;
+        }
         const agent = await getAgent(agentId, false);
-        agentCache.push(agent);
+        agentCache.set(agentId, agent);
         return agent;
     };
     
-    return await Promise.all(chats.map(async chat => {
-        const agent = await fetchAgent(chat.agent);
-        return zChat.parse({
-            ...chat,
-            id: chat._id.toString(),
-            user,
-            agent,
-            messages: options.includeMessages ? chat.messages : undefined,
-        });
-    }));
+    // Process all chats in parallel with proper mapping
+    return Promise.all(
+        chats.map(async chat => {
+            const agent = await fetchAgent(chat.agent);
+            
+            return zChat.parse({
+                ...chat,
+                id: chat._id.toString(),
+                user,
+                agent,
+                messages: includeMessages ? chat.messages : undefined,
+            });
+        })
+    );
 }
 
 export async function createChat(chat: ChatCreate & { user: string }): Promise<Chat> {
