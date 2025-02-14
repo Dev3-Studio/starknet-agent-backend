@@ -1,6 +1,6 @@
 import { User, UserCreate, zUser } from '../lib/dto';
 import { UserCollection } from '../database/schema';
-import { NotFoundError } from '../lib/httpErrors';
+import { ConflictError, NotFoundError } from '../lib/httpErrors';
 
 export async function getUser(address: string): Promise<User> {
     const res = await UserCollection.findOne({ walletAddress: address });
@@ -21,6 +21,10 @@ export async function getUserById(id: string): Promise<User> {
 }
 
 export async function createUser(user: UserCreate): Promise<User> {
+    const existingUser = await getUser(user.walletAddress).catch((e) =>
+        e instanceof NotFoundError ? null : Promise.reject(e),
+    );
+    if (existingUser) throw new ConflictError('User already exists');
     const res = await UserCollection.insertOne({ ...user, credits: 0 });
-    return await getUser(res.insertedId.toString());
+    return await getUserById(res.insertedId.toString());
 }
