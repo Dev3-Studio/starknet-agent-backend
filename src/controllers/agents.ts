@@ -11,9 +11,11 @@ export async function getAgent(req: Request, res: Response) {
 }
 
 export async function getAgents(req: Request, res: Response) {
-    const { tags, limit, creator, sort, order } = req.query;
+    const { tags, limit, creator, sort, order, searchQuery } = req.query;
+    
     res.send(await services.getAgents({
         tags: tags as string[],
+        searchQuery: searchQuery as string,
         limit: Number(limit),
         creator: creator as string,
         sort: sort as 'chats' | 'messages' | 'date' | undefined,

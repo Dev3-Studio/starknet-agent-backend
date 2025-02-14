@@ -16,6 +16,7 @@ router.get('/:id',
 
 router.get('/',
     parseQueryMiddleware(z.object({
+        searchQuery: z.string().optional(),
         tags: z.string().or(z.string().array()).optional(),
         limit: z.coerce.number().int().min(0).optional(),
         creator: z.string().optional(),

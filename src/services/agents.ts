@@ -34,25 +34,36 @@ interface GetAgentsProps {
     creator?: string;
     sort?: 'chats' | 'messages' | 'date';
     order?: string;
+    searchQuery?: string;
 }
 
 export async function getAgents(props: GetAgentsProps): Promise<AgentPublic[]> {
-    const { tags, limit, creator, sort, order } = props;
+    const { tags, limit, creator, sort, order, searchQuery } = props;
     
     const query: Record<string, unknown> = {};
     if (tags) query.tags = { $all: [tags] };
     if (creator) query.creator = creator;
+    if (searchQuery) {
+        query.$or = [
+            { name: { $regex: searchQuery, $options: 'i' } },
+            { tags: { $regex: searchQuery, $options: 'i' } }
+        ];
+    }
+    
     const sortQuery: Record<string, 1 | -1> = {};
     if (sort == 'date') sortQuery['_id'] = order === 'asc' ? 1 : -1;
     else if (sort) sortQuery[sort] = order === 'asc' ? 1 : -1;
+    
     const agents = await AgentCollection.find(query).sort(sortQuery).limit(limit ?? 100).toArray();
     const creators = await UserCollection.find({ _id: { $in: agents.map(a => new ObjectId(a.creator)) } }).toArray();
+    
     return agents.map(agent => {
         const creator = creators.find(c => c._id.toString() === agent.creator);
         if (!creator) throw new InternalServerError('Creator not found');
         return zAgentPublic.parse(formatAgentForResponse(agent, creator));
     });
 }
+
 
 export async function getAgentCreator(agentId: string): Promise<User> {
     const agentResult = await AgentCollection.findOne({ _id: new ObjectId(agentId) });
