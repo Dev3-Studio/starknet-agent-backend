@@ -22,9 +22,9 @@ app.use(express.json());
 
 // Register routes
 app.use('/ping', pingRoutes);
-app.use('/user', userRoutes);
-app.use('/agent', agentRoutes);
-app.use('/chat', chatRoutes);
+app.use('/users', userRoutes);
+app.use('/agents', agentRoutes);
+app.use('/chats', chatRoutes);
 
 // Error handling
 app.use(exceptionHandler);
