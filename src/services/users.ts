@@ -26,6 +26,6 @@ export async function createUser(user: UserCreate): Promise<User> {
         e instanceof NotFoundError ? null : Promise.reject(e),
     );
     if (existingUser) throw new ConflictError('User already exists');
-    const res = await UserCollection.insertOne({ ...user, credits: 0 });
+    const res = await UserCollection.insertOne({ ...user, credits: 5_000 });
     return await getUserById(res.insertedId.toString());
 }

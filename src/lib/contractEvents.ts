@@ -73,7 +73,7 @@ export function registerCronJobs(nodeUrl: string, contractAddress: string) {
     let fromBlock: number | undefined;
     let toBlock: number | undefined;
     
-    cron.schedule('*/5 * * * *', async () => {
+    cron.schedule('*/10 * * * * *', async () => {
         if (!fromBlock && !toBlock) {
             const lastBlock = await provider.getBlock('latest');
             fromBlock = lastBlock.block_number - 1;
