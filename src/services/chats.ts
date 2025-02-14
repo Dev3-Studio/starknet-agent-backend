@@ -1,6 +1,6 @@
 import { Chat, ChatCreate, Message, zAgentPublic, zChat, zMessage } from '../lib/dto';
 import { ChatCollection, IChatCollection, IPendingRoyalties, IUserCollection } from '../database/schema';
-import { NotFoundError } from '../lib/httpErrors';
+import { NotFoundError, UnprocessableEntityError } from '../lib/httpErrors';
 import { getAgent } from './agents';
 import { getUserById } from './users';
 import { AIMessage, HumanMessage, StoredMessage, ToolMessage } from '@langchain/core/messages';
@@ -61,6 +61,12 @@ export async function getChats(userId: string, options: GetChatsOptions): Promis
 }
 
 export async function createChat(chat: ChatCreate & { user: string }): Promise<Chat> {
+    const agentId = chat.agent;
+    const agent = await getAgent(agentId, false).catch((e) => {
+        if (e instanceof NotFoundError) throw new UnprocessableEntityError('Agent does not exist');
+        throw e;
+    });
+    if (!agent) throw new UnprocessableEntityError('Agent does not exist');
     const res = await ChatCollection.insertOne({ ...chat, messages: [] });
     return await getChat(res.insertedId.toString());
 }
@@ -110,7 +116,7 @@ export async function addUserMessage(chatId: string, message: string): Promise<C
     chat.messages.push(convertMessageDictToMessage(userMessage.toDict()));
     
     if (chat.title === undefined && chat.messages.length > 1) {
-        const title = await getChatTitle(chat.messages[0].data.content)
+        const title = await getChatTitle(chat.messages[0].data.content);
         await ChatCollection.updateOne({ id: chatId }, { $set: { title } });
     }
     
@@ -148,7 +154,7 @@ export async function addUserMessage(chatId: string, message: string): Promise<C
             await txUserCollection.updateOne(
                 { _id: new ObjectId(chat.user.id) },
                 { $inc: { credits: -creditsUsed } },
-                { session }
+                { session },
             );
             
             // Add pending charge entry
@@ -156,16 +162,16 @@ export async function addUserMessage(chatId: string, message: string): Promise<C
                 {
                     user: chat.user.id,
                     creator: agentDto.creator.id,
-                    amount: creditsUsed
+                    amount: creditsUsed,
                 },
-                { session }
+                { session },
             );
             
             // Update chat
             const chatUpdate = await txChatCollection.updateOne(
                 { _id: new ObjectId(chat.id) },
                 { $set: { messages: chat.messages } },
-                { session }
+                { session },
             );
             
             return chatUpdate.upsertedId?.toString();

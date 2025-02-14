@@ -37,6 +37,12 @@ export class ConflictError extends CustomHttpError {
     }
 }
 
+export class UnprocessableEntityError extends CustomHttpError {
+    constructor(message: string) {
+        super('UnprocessableEntityError', message, 422);
+    }
+}
+
 export class InternalServerError extends CustomHttpError {
     constructor(message: string) {
         super('InternalServerError', message, 500);
