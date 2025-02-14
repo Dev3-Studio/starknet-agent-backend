@@ -38,8 +38,9 @@ interface GetAgentsProps {
 
 export async function getAgents(props: GetAgentsProps): Promise<AgentPublic[]> {
     const { tags, limit, creator, sort, order } = props;
+    
     const query: Record<string, unknown> = {};
-    if (tags) query.tags = { $all: tags };
+    if (tags) query.tags = { $all: [tags] };
     if (creator) query.creator = creator;
     const sortQuery: Record<string, 1 | -1> = {};
     if (sort == 'date') sortQuery['_id'] = order === 'asc' ? 1 : -1;
