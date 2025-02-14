@@ -10,6 +10,7 @@ import { ChatGroq } from '@langchain/groq';
 import { env } from '../lib/env';
 import { client } from '../database';
 import { ObjectId } from 'mongodb';
+import { getChatTitle } from '../lib/getChatTitle';
 
 export async function getChat(chatId: string): Promise<Chat & { messages: Message[] }> {
     const res = await ChatCollection.findOne({ _id: new ObjectId(chatId) });
@@ -27,18 +28,16 @@ export async function getChat(chatId: string): Promise<Chat & { messages: Messag
 }
 
 interface GetChatsOptions {
-    limit?: number;
-    sort?: 'chats' | 'messages' | 'date';
     order?: 'asc' | 'desc';
+    agentId?: string;
     includeMessages?: boolean;
 }
 
 export async function getChats(userId: string, options: GetChatsOptions): Promise<Chat[]> {
-    const { limit, sort, order } = options;
+    const { order } = options;
     const sortQuery: Record<string, 1 | -1> = {};
-    if (sort == 'date') sortQuery['_id'] = order === 'asc' ? 1 : -1;
-    else if (sort) sortQuery[sort] = order === 'asc' ? 1 : -1;
-    const chats = await ChatCollection.find({ user: userId }).sort(sortQuery).limit(limit ?? 100).toArray();
+    sortQuery['_id'] = order === 'asc' ? 1 : -1;
+    const chats = await ChatCollection.find({ user: userId }).sort(sortQuery).toArray();
     const user = await getUserById(userId);
     const agentCache: z.infer<typeof zAgentPublic>[] = [];
     const fetchAgent = async (agentId: string) => {
@@ -109,6 +108,12 @@ export async function addUserMessage(chatId: string, message: string): Promise<C
     const chat = await getChat(chatId);
     const userMessage = new HumanMessage(message);
     chat.messages.push(convertMessageDictToMessage(userMessage.toDict()));
+    
+    if (chat.title === undefined && chat.messages.length > 1) {
+        const title = await getChatTitle(chat.messages[0].data.content)
+        await ChatCollection.updateOne({ id: chatId }, { $set: { title } });
+    }
+    
     const agentDto = await getAgent(chat.agent.id, true);
     
     const agent = new Agent({

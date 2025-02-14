@@ -16,13 +16,12 @@ export async function getChat(req: Request, res: Response) {
 }
 
 export async function getChats(req: Request, res: Response) {
-    const { limit, sort, order, includeMessages } = req.query;
+    const { agentId, order, includeMessages } = req.query;
     const user = req.user;
     if (!user?.id) throw new ForbiddenError('User not found');
     res.send(await services.getChats(user?.id, {
-        limit: limit as number | undefined,
-        sort: sort as 'chats' | 'messages' | 'date' | undefined,
-        order: order as 'asc' | 'desc' | undefined,
+        order: order as 'asc' | 'desc',
+        agentId: agentId as string,
         includeMessages: includeMessages === 'true',
     }));
 }
