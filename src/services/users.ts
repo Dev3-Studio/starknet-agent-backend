@@ -3,7 +3,7 @@ import { UserCollection } from '../database/schema';
 import { NotFoundError } from '../lib/httpErrors';
 
 export async function getUser(address: string): Promise<User> {
-    const res = await UserCollection.findOne({ address });
+    const res = await UserCollection.findOne({ walletAddress: address });
     if (!res) throw new NotFoundError('User not found');
     return zUser.parse({
         ...res,
