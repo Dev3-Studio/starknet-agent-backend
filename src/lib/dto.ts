@@ -3,14 +3,21 @@ import { z } from 'zod';
 /* Export Data Transfer Objects (DTOs) and corresponding types for the all entities in the application
  Naming convention: DTOs are named as z<EntityName><Action>, types are named as <EntityName><Action>
  Examples for User entity: DTO = zUser, type = User; DTO = zUserCreate, types = UserCreate */
-export const zEthereumAddress = z.string().refine((value) => {
-    return /^0x[a-fA-F0-9]{40}$/.test(value);
-});
-export type EthereumAddress = z.infer<typeof zEthereumAddress>;
+export const zStarknetAddress = z
+    .string()
+    .refine((value) => {
+        return /^0x(0)?[a-fA-F0-9]{64}$/.test(value);
+    })
+    .transform((value) => {
+        value = value.toLowerCase();
+        if (!value.startsWith('0x0')) return value.replace('0x', '0x0');
+        return value;
+    });
+export type StarknetAddress = z.infer<typeof zStarknetAddress>;
 
 export const zUser = z.object({
-    id: z.string().uuid(),
-    walletAddress: zEthereumAddress,
+    id: z.string(),
+    walletAddress: zStarknetAddress,
     name: z.string().optional(),
     profileImage: z.string().url().optional(),
     credits: z.number().int().min(0),
@@ -26,9 +33,11 @@ export type Json = Literal | { [key: string]: Json } | Json[];
 const zJson: z.ZodType<Json> = z.lazy(() =>
     z.union([zLiteral, z.array(zJson), z.record(zJson)]),
 );
+
 export interface JsonTemplate {
     [key: string]: string | string[] | JsonTemplate;
 }
+
 const zJsonTemplate: z.ZodType<JsonTemplate> = z.record(
     z.string(),
     z.string().or(z.string().array()).or(z.lazy(() => zJsonTemplate)),
@@ -48,7 +57,7 @@ export const zAgentTool = z.object({
 export type AgentTool = z.infer<typeof zAgentTool>;
 
 export const zAgent = z.object({
-    id: z.string().uuid(),
+    id: z.string(),
     name: z.string(),
     description: z.string(),
     tagline: z.string().max(32),
@@ -105,7 +114,7 @@ export const zMessage = z.object({
 export type Message = z.infer<typeof zMessage>;
 
 export const zChat = z.object({
-    id: z.string().uuid(),
+    id: z.string(),
     user: zUser,
     agent: zAgentPublic,
     title: z.string().optional(),
@@ -118,6 +127,6 @@ export const zChatCreate = zChat
         title: true,
     })
     .merge(z.object({
-        agent: z.string().uuid(),
+        agent: z.string(),
     }));
 export type ChatCreate = z.infer<typeof zChatCreate>;
