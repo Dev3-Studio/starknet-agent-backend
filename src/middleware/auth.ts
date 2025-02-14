@@ -19,10 +19,6 @@ export function withAuth() {
             next(new UnauthorizedError('No Authorization header provided'));
             return;
         }
-        if (typeof authHeader !== 'string') {
-            next(new UnauthorizedError('Invalid Authorization header'));
-            return;
-        }
         
         try {
             req.user = await getUserFromToken(authHeader);
