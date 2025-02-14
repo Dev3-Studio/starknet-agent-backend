@@ -4,13 +4,14 @@ import { parseBodyMiddleware, parseQueryMiddleware } from '../middleware/parse';
 import { zAgentCreate } from '../lib/dto';
 import { z } from 'zod';
 import { populateUser, withAuth } from '../middleware/auth';
+import { exceptionWrapper } from '../middleware/exception';
 
 const router = Router();
 
 router.get('/:id',
     populateUser(),
     parseQueryMiddleware(z.string().uuid()),
-    controller.getAgent,
+    exceptionWrapper(controller.getAgent),
 );
 
 router.get('/',
@@ -21,20 +22,20 @@ router.get('/',
         sort: z.literal('chats').or(z.literal('messages')).or(z.literal('date')).optional(),
         order: z.literal('asc').or(z.literal('desc')).optional(),
     })),
-    controller.getAgents,
+    exceptionWrapper(controller.getAgents),
 );
 
 router.post('/',
     withAuth(),
     parseBodyMiddleware(zAgentCreate),
-    controller.createAgent,
+    exceptionWrapper(controller.createAgent),
 );
 
 router.patch('/:id',
     withAuth(),
     parseQueryMiddleware(z.string().uuid()),
     parseBodyMiddleware(zAgentCreate),
-    controller.updateAgent,
+    exceptionWrapper(controller.updateAgent),
 );
 
 export default router;

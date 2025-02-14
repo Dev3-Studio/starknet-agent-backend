@@ -1,27 +1,28 @@
 import { Router } from 'express';
 import * as controller from '../controllers/chats';
 import { withAuth } from '../middleware/auth';
+import { exceptionWrapper } from '../middleware/exception';
 
 const router = Router();
 
 router.get('/:id',
     withAuth(),
-    controller.getChat
+    exceptionWrapper(controller.getChat)
 );
 
 router.post('/',
     withAuth(),
-    controller.createChat
+    exceptionWrapper(controller.createChat)
 );
 
 router.post('/:id/messages',
     withAuth(),
-    controller.addUserMessage
+    exceptionWrapper(controller.addUserMessage)
 );
 
 router.delete('/:id',
     withAuth(),
-    controller.deleteChat
+    exceptionWrapper(controller.deleteChat)
 );
 
 export default router;

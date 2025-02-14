@@ -4,24 +4,31 @@ import jwt, { JwtPayload } from 'jsonwebtoken';
 import { env } from '../lib/env';
 import { UserCollection } from '../database/schema';
 
+async function getUserFromToken(authHeader: string) {
+    const token = authHeader.split(' ')[1];
+    const decodedToken = jwt.verify(token, env('JWT_SECRET'));
+    const address = (decodedToken as JwtPayload).address as string;
+    const userRes = await UserCollection.findOne({ address });
+    return { id: userRes?._id.toString() ?? undefined, address };
+}
+
 export function withAuth() {
     return async (req: Request, res: Response, next: NextFunction) => {
-        // Get jwt header
-        const authHeader = req.headers['authorization'];
-        if (!authHeader) throw new UnauthorizedError('No Authorization header provided');
-        const token = authHeader.split(' ')[1];
+        const authHeader = req.headers['Authorization'];
+        if (!authHeader) {
+            next(new UnauthorizedError('No Authorization header provided'));
+            return;
+        }
+        if (typeof authHeader !== 'string') {
+            next(new UnauthorizedError('Invalid Authorization header'));
+            return;
+        }
         
-        // Verify jwt
         try {
-            const decodedToken = jwt.verify(token, env('JWT_SECRET'));
-            const address = (decodedToken as JwtPayload).address as string;
-            const user = await UserCollection.findOne({ address });
-            req.user = {
-                id: user?._id.toString() ?? undefined,
-                address,
-            };
+            req.user = await getUserFromToken(authHeader);
         } catch {
-            throw new UnauthorizedError('Invalid token');
+            next(new UnauthorizedError('Invalid token'));
+            return;
         }
         next();
     };
@@ -29,21 +36,20 @@ export function withAuth() {
 
 export function populateUser() {
     return async (req: Request, res: Response, next: NextFunction) => {
-        // Get user from jwt
-        const authHeader = req.headers['authorization'];
-        if (!authHeader) return next();
-        const token = authHeader.split(' ')[1];
+        const authHeader = req.headers['Authorization'];
+        if (!authHeader) {
+            next();
+        }
+        if (typeof authHeader !== 'string') {
+            next(new UnauthorizedError('Invalid Authorization header'));
+            return;
+        }
         
         try {
-            const decodedToken = jwt.verify(token, env('JWT_SECRET'));
-            const address = (decodedToken as JwtPayload).address as string;
-            const user = await UserCollection.findOne({ address });
-            req.user = {
-                id: user?._id.toString() ?? undefined,
-                address,
-            };
+            req.user = await getUserFromToken(authHeader);
         } catch {
-            // Do nothing
+            next(new UnauthorizedError('Invalid token'));
+            return;
         }
         next();
     };
